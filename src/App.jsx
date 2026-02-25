@@ -7,6 +7,13 @@ import Attendance from './pages/Attendance';
 import SessionMaterial from './pages/SessionMaterial';
 import Feedback from './pages/Feedback';
 
+const ProtectedRoute = ({ token, children }) => {
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem('cc_token'));
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('cc_user_email'));
@@ -67,13 +74,6 @@ function App() {
     }
   }, []); // Only on initial mount
 
-  const ProtectedRoute = ({ children }) => {
-    if (!token) {
-      return <Navigate to="/login" replace />;
-    }
-    return children;
-  };
-
   return (
     <div className="flex min-h-screen bg-gray-100 text-gray-900 font-sans selection:bg-teal-accent/30">
       {token && <Sidebar userEmail={userEmail} onLogout={handleLogout} />}
@@ -120,7 +120,7 @@ function App() {
             <Route
               path="/attendance"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute token={token}>
                   <Attendance token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
                 </ProtectedRoute>
               }
@@ -128,7 +128,7 @@ function App() {
             <Route
               path="/material"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute token={token}>
                   <SessionMaterial token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
                 </ProtectedRoute>
               }
@@ -136,7 +136,7 @@ function App() {
             <Route
               path="/feedback"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute token={token}>
                   <Feedback token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
                 </ProtectedRoute>
               }
