@@ -27,7 +27,7 @@ import {
     CartesianGrid
 } from 'recharts';
 
-const Feedback = ({ token, courses, showToast }) => {
+const Feedback = ({ token, courses, showToast, onLogout }) => {
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [selectedDivision, setSelectedDivision] = useState('');
     const [feedbackData, setFeedbackData] = useState(null);
@@ -72,6 +72,7 @@ const Feedback = ({ token, courses, showToast }) => {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            if (response.status === 401) return onLogout();
             const data = await response.json();
             if (response.ok) {
                 setFeedbackData(data);

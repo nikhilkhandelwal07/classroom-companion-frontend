@@ -19,7 +19,7 @@ import {
     Save
 } from 'lucide-react';
 
-const SessionMaterial = ({ token, courses, showToast }) => {
+const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
     const [activeTab, setActiveTab] = useState('materials');
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [selectedDivision, setSelectedDivision] = useState('');
@@ -96,6 +96,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/list-materials?course_id=${cid}&division=${div}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 const data = await res.json();
                 setFiles(data.files || []);
@@ -121,13 +122,14 @@ const SessionMaterial = ({ token, courses, showToast }) => {
         );
 
         if (isContextSwitch) {
+            console.log("DEBUG: Context switch detected, clearing session material state.");
             const clearPreviousSession = async () => {
                 const prevCid = lastContextRef.current.courseId;
                 const prevDiv = lastContextRef.current.division;
 
                 try {
                     // Clear the PREVIOUS context on the server
-                    await fetch(`${import.meta.env.VITE_API_URL}/clear-material`, {
+                    const res = await fetch(`${import.meta.env.VITE_API_URL}/clear-material`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -138,6 +140,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                             division: prevDiv
                         })
                     });
+                    if (res.status === 401) return onLogout();
                 } catch (err) {
                     console.error("Auto-clear background request failed", err);
                 }
@@ -189,6 +192,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                 body: formData
             });
 
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 await fetchMaterials(selectedCourseId, selectedDivision);
                 showToast("Files uploaded successfully!", "success");
@@ -217,6 +221,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                     division: selectedDivision
                 })
             });
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 await fetchMaterials(selectedCourseId, selectedDivision);
                 setUrlInput('');
@@ -244,6 +249,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                     division: selectedDivision
                 })
             });
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 const data = await res.json();
                 setSummaryData(data);
@@ -277,6 +283,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                     division: selectedDivision
                 })
             });
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 const data = await res.json();
                 setSessionPlan(data);
@@ -316,6 +323,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                     history: messages
                 })
             });
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 const data = await res.json();
                 setMessages([...newMessages, { role: 'ai', content: data.answer }]);
@@ -372,6 +380,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                 })
             });
 
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 const data = await res.json();
                 setMailStatus({
@@ -406,6 +415,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                     division: selectedDivision
                 })
             });
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 setFiles([]);
                 setUrls([]);
@@ -429,10 +439,11 @@ const SessionMaterial = ({ token, courses, showToast }) => {
         setFiles(newFiles);
 
         try {
-            await fetch(`${import.meta.env.VITE_API_URL}/remove-material?course_id=${selectedCourseId}&division=${selectedDivision}&source=${encodeURIComponent(fileName)}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/remove-material?course_id=${selectedCourseId}&division=${selectedDivision}&source=${encodeURIComponent(fileName)}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (res.status === 401) return onLogout();
         } catch (err) {
             console.error("Remove file backend failed", err);
         }
@@ -453,6 +464,7 @@ const SessionMaterial = ({ token, courses, showToast }) => {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (res.status === 401) return onLogout();
             if (res.ok) {
                 showToast("Reference removed", "success");
             } else {

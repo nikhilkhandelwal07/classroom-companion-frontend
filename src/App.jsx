@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { X, CheckCircle, AlertCircle, Info, Sparkles } from 'lucide-react';
 import Sidebar from './components/Sidebar';
@@ -32,9 +32,8 @@ function App() {
     setShowWelcome(true);
   };
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
-      // Clear all materials from server on logout
       if (token) {
         await fetch(`${import.meta.env.VITE_API_URL}/clear-all`, {
           method: 'POST',
@@ -51,7 +50,22 @@ function App() {
     localStorage.removeItem('cc_token');
     localStorage.removeItem('cc_user_email');
     localStorage.removeItem('cc_courses');
-  };
+  }, [token]);
+
+  // Initial Check: Verify token on mount if it exists
+  useEffect(() => {
+    if (token) {
+      fetch(`${import.meta.env.VITE_API_URL}/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => {
+        if (res.status === 401) {
+          handleLogout();
+        }
+      }).catch(err => {
+        console.error("Token verification failed", err);
+      });
+    }
+  }, []); // Only on initial mount
 
   const ProtectedRoute = ({ children }) => {
     if (!token) {
@@ -107,7 +121,7 @@ function App() {
               path="/attendance"
               element={
                 <ProtectedRoute>
-                  <Attendance token={token} courses={courses} showToast={showToast} />
+                  <Attendance token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
                 </ProtectedRoute>
               }
             />
@@ -115,7 +129,7 @@ function App() {
               path="/material"
               element={
                 <ProtectedRoute>
-                  <SessionMaterial token={token} courses={courses} showToast={showToast} />
+                  <SessionMaterial token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
                 </ProtectedRoute>
               }
             />
@@ -123,7 +137,7 @@ function App() {
               path="/feedback"
               element={
                 <ProtectedRoute>
-                  <Feedback token={token} courses={courses} showToast={showToast} />
+                  <Feedback token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
                 </ProtectedRoute>
               }
             />

@@ -24,7 +24,7 @@ import {
     Cell
 } from 'recharts';
 
-const Attendance = ({ token, courses, showToast }) => {
+const Attendance = ({ token, courses, showToast, onLogout }) => {
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [selectedDivision, setSelectedDivision] = useState('');
     const [attendanceData, setAttendanceData] = useState(null);
@@ -75,6 +75,7 @@ const Attendance = ({ token, courses, showToast }) => {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            if (response.status === 401) return onLogout();
             const data = await response.json();
             if (response.ok) {
                 setAttendanceData(data);
@@ -116,6 +117,7 @@ const Attendance = ({ token, courses, showToast }) => {
                 })
             });
 
+            if (response.status === 401) return onLogout();
             const data = await response.json();
             if (response.ok) {
                 setEmailResult({ success: true, count: data.sent });
