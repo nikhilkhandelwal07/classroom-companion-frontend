@@ -39,7 +39,7 @@ const Sidebar = ({ userEmail, onLogout, token, courses }) => {
 
     const navItems = [
         { name: 'Attendance', path: '/attendance', icon: ClipboardCheck },
-        { name: 'Participation', path: '/participation', icon: GraduationCap },
+        { name: 'Participation', path: '/participation', icon: Users },
         { name: 'Session Material', path: '/material', icon: BookOpen },
         { name: 'Discussions', path: '/discussions', icon: MessageCircle, badge: unreadCount },
         { name: 'Feedback', path: '/feedback', icon: MessageSquare },
