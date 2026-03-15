@@ -11,7 +11,8 @@ import {
     X,
     ArrowUpDown,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+    Share2
 } from 'lucide-react';
 import {
     BarChart,
@@ -136,6 +137,12 @@ const Attendance = ({ token, courses, showToast, onLogout }) => {
         }
     };
 
+    const handleShareLink = () => {
+        const url = `${window.location.origin}/student/${selectedCourseId}/${selectedDivision}`;
+        navigator.clipboard.writeText(url);
+        showToast("Student Portal link copied to clipboard!", "success");
+    };
+
     const sortedStudents = useMemo(() => {
         if (!attendanceData) return [];
         let items = [...attendanceData.students];
@@ -210,6 +217,14 @@ const Attendance = ({ token, courses, showToast, onLogout }) => {
                         <Mail className="w-4 h-4" />
                         <span>Email Low Attendance</span>
                     </button>
+
+                    <button
+                        onClick={handleShareLink}
+                        className="flex items-center space-x-2 bg-navy hover:bg-navy/90 text-white px-5 py-2 rounded-lg font-bold shadow-lg shadow-navy/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        <Share2 className="w-4 h-4" />
+                        <span>Share Student Link</span>
+                    </button>
                 </div>
             </div>
 
@@ -278,7 +293,7 @@ const Attendance = ({ token, courses, showToast, onLogout }) => {
 
                     {/* Chart Section */}
                     <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                        <h3 className="text-xl font-extrabold text-navy mb-6">Student Participation</h3>
+                        <h3 className="text-xl font-extrabold text-navy mb-6">Student Class Participation</h3>
                         <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={attendanceData.students}>

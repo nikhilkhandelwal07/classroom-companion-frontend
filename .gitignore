@@ -11,17 +11,20 @@ coverage/
 
 # Production
 dist/
+faiss_db/
 
 # Misc
 .DS_Store
 *.pem
 
 # Environment
-.env
+.env.production
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+faiss_db/
 
 # Logs
 npm-debug.log*

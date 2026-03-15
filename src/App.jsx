@@ -6,6 +6,9 @@ import Login from './pages/Login';
 import Attendance from './pages/Attendance';
 import SessionMaterial from './pages/SessionMaterial';
 import Feedback from './pages/Feedback';
+import Participation from './pages/Participation';
+import Discussions from './pages/Discussions';
+import StudentPortal from './pages/StudentPortal';
 
 const ProtectedRoute = ({ token, children }) => {
   if (!token) {
@@ -90,7 +93,7 @@ function App() {
         </div>
       )}
 
-      <main className={`flex-1 flex flex-col min-h-screen overflow-x-hidden overflow-y-auto transition-all duration-300 ${token ? 'md:pl-72' : ''}`}>
+      <main className={`flex-1 flex flex-col min-h-screen overflow-x-hidden overflow-y-auto transition-all duration-300 ${token && !window.location.pathname.startsWith('/student/') ? 'md:pl-72' : ''}`}>
 
         {/* Welcome Banner */}
         {showWelcome && token && (
@@ -114,7 +117,7 @@ function App() {
           </div>
         )}
 
-        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8">
+        <div className="flex-1 flex flex-col items-center justify-start p-6 sm:p-8">
           <Routes>
             <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
             <Route
@@ -134,6 +137,22 @@ function App() {
               }
             />
             <Route
+              path="/participation"
+              element={
+                <ProtectedRoute token={token}>
+                  <Participation token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/discussions"
+              element={
+                <ProtectedRoute token={token}>
+                  <Discussions token={token} courses={courses} showToast={showToast} onLogout={handleLogout} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/feedback"
               element={
                 <ProtectedRoute token={token}>
@@ -141,6 +160,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/student/:courseId/:divisionId" element={<StudentPortal showToast={showToast} />} />
             <Route path="/" element={<Navigate to={token ? "/attendance" : "/login"} replace />} />
           </Routes>
         </div>

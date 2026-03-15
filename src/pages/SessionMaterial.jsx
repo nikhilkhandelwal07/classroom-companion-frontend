@@ -16,7 +16,10 @@ import {
     Search,
     Mail,
     Edit2,
-    Save
+    Save,
+    Presentation,
+    Clock,
+    Trash2
 } from 'lucide-react';
 
 const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
@@ -56,6 +59,14 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
         includeSummary: true
     });
 
+    // Session History State
+    const [historyData, setHistoryData] = useState([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+    const [sessionFilter, setSessionFilter] = useState(null);
+    const [hasUploadedThisSession, setHasUploadedThisSession] = useState(false);
+    const [summaryScope, setSummaryScope] = useState('all'); // 'current' or 'all'
+    const [planScope, setPlanScope] = useState('all'); // 'current' or 'all'
+
     // Handle course/division derived data
     const uniqueCourses = useMemo(() => {
         const map = new Map();
@@ -89,6 +100,14 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
         }
     }, [currentCourseName]);
 
+    // Update toggles when uploads happen
+    useEffect(() => {
+        if (hasUploadedThisSession) {
+            setSummaryScope('current');
+            setPlanScope('current');
+        }
+    }, [hasUploadedThisSession]);
+
     // NEW: Fetch materials from server to sync UI
     const fetchMaterials = async (cid, div) => {
         if (!cid || !div) return;
@@ -104,6 +123,25 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
             }
         } catch (err) {
             console.error("UI Sync failed", err);
+        }
+    };
+
+    const fetchHistory = async (cid, div) => {
+        if (!cid || !div) return;
+        setLoadingHistory(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/session-history?course_id=${cid}&division=${div}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.status === 401) return onLogout();
+            if (res.ok) {
+                const data = await res.json();
+                setHistoryData(data.data || []);
+            }
+        } catch (err) {
+            console.error("History sync failed", err);
+        } finally {
+            setLoadingHistory(false);
         }
     };
 
@@ -127,8 +165,12 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                 const prevCid = lastContextRef.current.courseId;
                 const prevDiv = lastContextRef.current.division;
 
+                /* 
+                   REMOVED: Automatic clear on switch is destructive. 
+                   User's data should persist unless they click "Clear Context" or "Clear Session".
+                */
+                /*
                 try {
-                    // Clear the PREVIOUS context on the server
                     const res = await fetch(`${import.meta.env.VITE_API_URL}/clear-material`, {
                         method: 'POST',
                         headers: {
@@ -144,13 +186,23 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                 } catch (err) {
                     console.error("Auto-clear background request failed", err);
                 }
+                */
 
                 // Reset current local state as it's a new session
                 setFiles([]);
                 setUrls([]);
+                setHistoryData([]); // Added this
                 setSummaryData(null);
                 setSessionPlan(null);
                 setMessages([]);
+                setSessionFilter(null);
+                setHasUploadedThisSession(false);
+                setSummaryScope('all');
+                setPlanScope('all');
+
+                // Re-fetch for the NEW context
+                await fetchMaterials(selectedCourseId, selectedDivision);
+                await fetchHistory(selectedCourseId, selectedDivision);
             };
 
             clearPreviousSession();
@@ -158,6 +210,7 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
             // If the context is valid but hasn't changed (e.g., initial mount or simple tab return)
             // fetch existing materials to ensure UI is in sync
             fetchMaterials(selectedCourseId, selectedDivision);
+            fetchHistory(selectedCourseId, selectedDivision);
         }
 
         // Always update the reference if we have a valid context
@@ -195,6 +248,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
             if (res.status === 401) return onLogout();
             if (res.ok) {
                 await fetchMaterials(selectedCourseId, selectedDivision);
+                await fetchHistory(selectedCourseId, selectedDivision);
+                setHasUploadedThisSession(true);
                 showToast("Files uploaded successfully!", "success");
             } else {
                 showToast("Upload failed", "error");
@@ -224,6 +279,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
             if (res.status === 401) return onLogout();
             if (res.ok) {
                 await fetchMaterials(selectedCourseId, selectedDivision);
+                await fetchHistory(selectedCourseId, selectedDivision);
+                setHasUploadedThisSession(true);
                 setUrlInput('');
                 showToast("URL added successfully!", "success");
             } else {
@@ -238,6 +295,9 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
         setGeneratingSummary(true);
         setActiveTab('summary');
         try {
+            const today = new Date().toISOString().split('T')[0];
+            const sessionDate = sessionFilter || (summaryScope === 'current' ? today : null);
+
             const res = await fetch(`${import.meta.env.VITE_API_URL}/generate-summary`, {
                 method: 'POST',
                 headers: {
@@ -246,7 +306,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                 },
                 body: JSON.stringify({
                     course_id: selectedCourseId,
-                    division: selectedDivision
+                    division: selectedDivision,
+                    session_date: sessionDate
                 })
             });
             if (res.status === 401) return onLogout();
@@ -272,6 +333,9 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
         setIsEditingPlan(false);
         setGeneratingPlan(true);
         try {
+            const today = new Date().toISOString().split('T')[0];
+            const sessionDate = sessionFilter || (planScope === 'current' ? today : null);
+
             const res = await fetch(`${import.meta.env.VITE_API_URL}/generate-session-plan`, {
                 method: 'POST',
                 headers: {
@@ -280,7 +344,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                 },
                 body: JSON.stringify({
                     course_id: selectedCourseId,
-                    division: selectedDivision
+                    division: selectedDivision,
+                    session_date: sessionDate
                 })
             });
             if (res.status === 401) return onLogout();
@@ -320,7 +385,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                     question: text,
                     course_id: selectedCourseId,
                     division: selectedDivision,
-                    history: messages
+                    history: messages,
+                    session_date: sessionFilter
                 })
             });
             if (res.status === 401) return onLogout();
@@ -498,6 +564,36 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
         window.print();
     };
 
+    const handleClearHistorySession = async (dateStr) => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/clear-session`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    course_id: selectedCourseId,
+                    division: selectedDivision,
+                    session_date: dateStr
+                })
+            });
+            if (res.status === 401) return onLogout();
+            if (res.ok) {
+                fetchHistory(selectedCourseId, selectedDivision);
+                if (sessionFilter === dateStr) {
+                    setSessionFilter(null);
+                    setMessages([]);
+                    setSummaryData(null);
+                    setSessionPlan(null);
+                }
+                showToast(`Removed session for ${dateStr}`, "success");
+            }
+        } catch (err) {
+            showToast("Failed to clear session history", "error");
+        }
+    };
+
     return (
         <div className="flex flex-col space-y-8 animate-in fade-in duration-500 w-full max-w-6xl">
             {/* Header */}
@@ -543,7 +639,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                     { id: 'materials', icon: FileText, label: 'Materials' },
                     { id: 'summary', icon: Sparkles, label: 'AI Summary' },
                     { id: 'plan', icon: Calendar, label: 'Session Plan' },
-                    { id: 'chat', icon: MessageSquare, label: 'Chat' }
+                    { id: 'chat', icon: MessageSquare, label: 'Chat' },
+                    { id: 'history', icon: Clock, label: 'History' }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -560,6 +657,29 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
             </div>
 
             <div className="bg-white p-8 rounded-b-2xl shadow-sm border border-gray-100 min-h-[500px]">
+                {sessionFilter && activeTab !== 'history' && (
+                    <div className="mb-6 bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <Clock className="w-5 h-5 text-teal-600" />
+                            <span className="text-teal-800 font-bold">
+                                Exploring past session: <span className="font-extrabold">{sessionFilter}</span>
+                            </span>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                setSessionFilter(null);
+                                setSummaryData(null);
+                                setSessionPlan(null);
+                                setMessages([]);
+                                showToast("Returned to all sessions", "info");
+                            }}
+                            className="text-xs font-bold text-teal-700 bg-white px-3 py-1.5 rounded shadow-sm hover:bg-teal-100 transition-colors"
+                        >
+                            Clear Filter
+                        </button>
+                    </div>
+                )}
+
                 {/* MATERIALS TAB */}
                 {activeTab === 'materials' && (
                     <div className="space-y-8 animate-in slide-in-from-bottom-2">
@@ -575,7 +695,7 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                             <input
                                 type="file"
                                 multiple
-                                accept=".pdf"
+                                accept=".pdf,.pptx,.ppt,.docx,.doc"
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                                 onChange={handleFileUpload}
                             />
@@ -583,7 +703,7 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                                 <div className="w-16 h-16 bg-teal-50 text-teal-accent rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                     <Upload className="w-8 h-8" />
                                 </div>
-                                <h3 className="text-xl font-bold text-navy">Drag & Drop PDFs here</h3>
+                                <h3 className="text-xl font-bold text-navy">Drag & Drop Documents here</h3>
                                 <p className="text-gray-400 mt-1">or click to browse from your computer</p>
                             </div>
                         </div>
@@ -609,22 +729,47 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                                 </div>
                                 <div className="space-y-2">
                                     {files.length === 0 && <p className="text-sm text-gray-300 italic">No files uploaded yet.</p>}
-                                    {files.map((file, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="p-2 bg-white rounded-lg shadow-sm">
-                                                    <FileText className="w-4 h-4 text-navy" />
+                                    {files.map((file, idx) => {
+                                        const isPdf = file.toLowerCase().endsWith('.pdf');
+                                        const isPpt = file.toLowerCase().match(/\.pptx?$/);
+                                        const isDoc = file.toLowerCase().match(/\.docx?$/);
+                                        
+                                        let FileIcon = FileText;
+                                        let iconColor = "text-navy";
+                                        let badgeText = "DOC";
+                                        
+                                        if (isPdf) {
+                                            FileIcon = FileText;
+                                            iconColor = "text-red-500";
+                                            badgeText = "PDF";
+                                        } else if (isPpt) {
+                                            FileIcon = Presentation;
+                                            iconColor = "text-orange-500";
+                                            badgeText = "PPT";
+                                        } else if (isDoc) {
+                                            FileIcon = FileText;
+                                            iconColor = "text-blue-500";
+                                            badgeText = "DOCX";
+                                        }
+
+                                        return (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                        <FileIcon className={`w-4 h-4 ${iconColor}`} />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-gray-700">{file}</span>
+                                                    <span className="text-[10px] font-bold text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded">{badgeText}</span>
                                                 </div>
-                                                <span className="text-sm font-medium text-gray-700">{file}</span>
+                                                <button
+                                                    onClick={() => handleRemoveFile(idx)}
+                                                    className="text-gray-400 hover:text-rose-500"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={() => handleRemoveFile(idx)}
-                                                className="text-gray-400 hover:text-rose-500"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -697,6 +842,38 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                 {/* AI SUMMARY TAB */}
                 {activeTab === 'summary' && (
                     <div className="space-y-8 animate-in slide-in-from-bottom-2">
+                        {!sessionFilter && (
+                            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+                                <div>
+                                    <h3 className="text-xl font-extrabold text-navy">AI Summary</h3>
+                                    <p className="text-xs text-gray-400">Synthesize key points from your materials</p>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                    <div className="bg-gray-100 p-1 rounded-xl flex space-x-1">
+                                        <button 
+                                            onClick={() => setSummaryScope('current')}
+                                            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${summaryScope === 'current' ? 'bg-white shadow-sm text-navy' : 'text-gray-400 hover:text-gray-600'}`}
+                                        >
+                                            This Session Only
+                                        </button>
+                                        <button 
+                                            onClick={() => setSummaryScope('all')}
+                                            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${summaryScope === 'all' ? 'bg-white shadow-sm text-navy' : 'text-gray-400 hover:text-gray-600'}`}
+                                        >
+                                            All Sessions
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={handleGenerateSummary}
+                                        disabled={generatingSummary || (files.length === 0 && urls.length === 0)}
+                                        className="flex items-center space-x-2 bg-gradient-to-r from-teal-accent to-blue-500 text-white px-6 py-2 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform disabled:opacity-50 shadow-sm"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        <span>{generatingSummary ? 'Thinking...' : 'Generate Summary'}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         {generatingSummary ? (
                             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
                                 <Loader2 className="w-12 h-12 text-teal-accent animate-spin" />
@@ -757,15 +934,31 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                 {activeTab === 'plan' && (
                     <div className="space-y-8 animate-in slide-in-from-bottom-2">
                         <div className="flex items-center justify-between border-b border-gray-100 pb-6">
-                            <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-6">
                                 <button
                                     onClick={handleGeneratePlan}
                                     disabled={generatingPlan}
                                     className="flex items-center space-x-2 bg-navy text-white px-6 py-2 rounded-xl font-bold hover:bg-navy/90 disabled:opacity-50"
                                 >
                                     <Calendar className="w-4 h-4" />
-                                    <span>{generatingPlan ? 'Drafting...' : 'Re-Generate Plan'}</span>
+                                    <span>{generatingPlan ? 'Drafting...' : 'Generate Plan'}</span>
                                 </button>
+                                {!sessionFilter && (
+                                    <div className="bg-gray-100 p-1 rounded-xl flex space-x-1">
+                                        <button 
+                                            onClick={() => setPlanScope('current')}
+                                            className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg transition-all ${planScope === 'current' ? 'bg-white shadow-sm text-navy' : 'text-gray-400'}`}
+                                        >
+                                            Session Only
+                                        </button>
+                                        <button 
+                                            onClick={() => setPlanScope('all')}
+                                            className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg transition-all ${planScope === 'all' ? 'bg-white shadow-sm text-navy' : 'text-gray-400'}`}
+                                        >
+                                            All Data
+                                        </button>
+                                    </div>
+                                )}
                                 {sessionPlan && (
                                     <button
                                         onClick={() => setIsEditingPlan(!isEditingPlan)}
@@ -951,6 +1144,88 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* HISTORY TAB */}
+                {activeTab === 'history' && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-2">
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-6 mb-6">
+                            <div>
+                                <h3 className="text-xl font-extrabold text-navy">Session History</h3>
+                                <p className="text-sm text-gray-500">View and reload past uploaded materials</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setSessionFilter(null);
+                                    setSummaryData(null);
+                                    setSessionPlan(null);
+                                    setMessages([]);
+                                    setFiles([]); 
+                                    setUrls([]);  
+                                    setSummaryScope('current'); // Default to today for new session
+                                    setPlanScope('current');    // Default to today for new session
+                                    setActiveTab('materials');
+                                }}
+                                className="bg-navy text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-navy/90 border border-navy shadow-sm"
+                            >
+                                + New Active Session
+                            </button>
+                        </div>
+
+                        {loadingHistory ? (
+                            <div className="flex flex-col items-center justify-center min-h-[300px] space-y-4">
+                                <Loader2 className="w-10 h-10 text-teal-accent animate-spin" />
+                            </div>
+                        ) : historyData.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400">
+                                No past sessions found for this division.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {historyData.map((hist, idx) => (
+                                    <div key={idx} className={`p-6 bg-gray-50 rounded-2xl border ${sessionFilter === hist.session_date ? 'border-teal-accent shadow-md bg-white' : 'border-gray-100'}`}>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center space-x-2">
+                                                <Calendar className="w-5 h-5 text-navy" />
+                                                <h4 className="font-bold text-navy">{hist.session_date}</h4>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleClearHistorySession(hist.session_date)}
+                                                className="text-gray-400 hover:text-rose-500"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2 mb-6 text-sm text-gray-600">
+                                            <p><span className="font-bold">Files:</span> {hist.files_uploaded || 'None'}</p>
+                                            <p><span className="font-bold">URLs:</span> {hist.url_count}</p>
+                                        </div>
+                                        <div className="flex space-x-3">
+                                            <button 
+                                                onClick={() => {
+                                                    setSessionFilter(hist.session_date);
+                                                    setActiveTab('chat');
+                                                    setMessages([]);
+                                                }}
+                                                className="flex-1 bg-white text-navy border-2 border-navy text-sm font-bold py-2 rounded-xl hover:bg-gray-50"
+                                            >
+                                                Chat About This
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setSessionFilter(hist.session_date);
+                                                    handleGenerateSummary();
+                                                }}
+                                                className="flex-1 bg-teal-accent text-white text-sm font-bold py-2 rounded-xl hover:bg-teal-accent/90 focus:scale-[0.98] transition-transform"
+                                            >
+                                                Summary
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
