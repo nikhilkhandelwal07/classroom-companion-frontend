@@ -122,7 +122,7 @@ const Participation = ({ token, courses, showToast, onLogout }) => {
             if (res.ok) {
                 const data = await res.json();
                 showToast(`Successfully saved grades for ${data.saved} students!`, "success");
-                fetchParticipation(); // Refresh to get updated cumulative avgs
+                fetchParticipation(); // Refresh to get updated summative scores
             } else {
                 showToast("Failed to save grades", "error");
             }
@@ -258,7 +258,7 @@ const Participation = ({ token, courses, showToast, onLogout }) => {
                             <thead>
                                 <tr className="bg-gray-50/50 border-b border-gray-100">
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Student Details</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Cumulative Avg</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Summative Score</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-32">Score (1-10)</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Remarks</th>
                                 </tr>
@@ -286,12 +286,12 @@ const Participation = ({ token, courses, showToast, onLogout }) => {
                                         <td className="px-6 py-4 text-center">
                                             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-100">
                                                 <TrendingUp className="w-3 h-3 text-gray-400" />
-                                                <span className={`text-sm font-black ${!student.cumulative_avg ? 'text-gray-300' :
-                                                        student.cumulative_avg >= 8 ? 'text-emerald-600' :
-                                                            student.cumulative_avg >= 5 ? 'text-amber-600' : 'text-rose-600'
-                                                    }`}>
-                                                    {student.cumulative_avg || 'N/A'}
-                                                </span>
+                                                <span className={`text-sm font-black ${!student.summative_score ? 'text-gray-300' :
+                                                         student.summative_score >= 20 ? 'text-emerald-600' :
+                                                             student.summative_score >= 10 ? 'text-amber-600' : 'text-rose-600'
+                                                     }`}>
+                                                     {student.summative_score || 'N/A'}
+                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
