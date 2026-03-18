@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     MessageCircle, Search, Calendar, ChevronRight, 
     ChevronDown, ChevronUp, CheckCircle, Clock, 
-    Sparkles, Send, Loader2, AlertCircle 
+    Sparkles, Send, Loader2, AlertCircle, Share2
 } from 'lucide-react';
 
 const Discussions = ({ token, courses, showToast, onLogout }) => {
@@ -186,6 +186,13 @@ const Discussions = ({ token, courses, showToast, onLogout }) => {
         return Math.floor(seconds) + " sec ago";
     };
 
+    const handleShareLink = () => {
+        if (!selectedCourseId || !selectedDivision) return;
+        const url = `${window.location.origin}/student/${selectedCourseId}/${selectedDivision}`;
+        navigator.clipboard.writeText(url);
+        showToast("Student Portal link copied to clipboard!", "success");
+    };
+
     return (
         <div className="flex flex-col animate-in fade-in duration-500 w-full max-w-5xl mx-auto">
             {/* Header Area */}
@@ -198,7 +205,6 @@ const Discussions = ({ token, courses, showToast, onLogout }) => {
                         Division {selectedDivision}
                     </p>
                 </div>
-
                 <div className="flex items-center gap-4">
                     <select
                         className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-teal-accent outline-none font-bold text-navy text-sm"
@@ -212,6 +218,14 @@ const Discussions = ({ token, courses, showToast, onLogout }) => {
                             <option key={course.id} value={course.id}>{course.name}</option>
                         ))}
                     </select>
+
+                    <button
+                        onClick={handleShareLink}
+                        className="flex items-center space-x-2 bg-navy hover:bg-navy/90 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-navy/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm"
+                    >
+                        <Share2 className="w-4 h-4" />
+                        <span>Share Student Link</span>
+                    </button>
                 </div>
             </div>
 

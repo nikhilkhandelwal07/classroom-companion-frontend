@@ -225,20 +225,6 @@ const Participation = ({ token, courses, showToast, onLogout }) => {
                     />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2 text-xs font-bold text-gray-400">
-                        <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
-                        <span>High (8-10)</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs font-bold text-gray-400">
-                        <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                        <span>Avg (5-7)</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs font-bold text-gray-400">
-                        <div className="w-3 h-3 rounded-full bg-rose-400"></div>
-                        <span>Low (1-4)</span>
-                    </div>
-                </div>
             </div>
 
             {loading ? (
@@ -271,10 +257,7 @@ const Participation = ({ token, courses, showToast, onLogout }) => {
                                     >
                                         <td className="px-6 py-4">
                                             <div className="flex items-center space-x-3">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-navy font-black text-sm shadow-sm border ${student.score >= 8 ? 'bg-emerald-50 border-emerald-100' :
-                                                        student.score >= 5 ? 'bg-amber-50 border-amber-100' :
-                                                            student.score ? 'bg-rose-50 border-rose-100' : 'bg-gray-50 border-gray-100'
-                                                    }`}>
+                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-50 border border-gray-100 text-navy font-black text-sm shadow-sm">
                                                     {student.student_name.charAt(0)}
                                                 </div>
                                                 <div>
@@ -286,10 +269,7 @@ const Participation = ({ token, courses, showToast, onLogout }) => {
                                         <td className="px-6 py-4 text-center">
                                             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-100">
                                                 <TrendingUp className="w-3 h-3 text-gray-400" />
-                                                <span className={`text-sm font-black ${!student.summative_score ? 'text-gray-300' :
-                                                         student.summative_score >= 20 ? 'text-emerald-600' :
-                                                             student.summative_score >= 10 ? 'text-amber-600' : 'text-rose-600'
-                                                     }`}>
+                                                <span className={`text-sm font-black ${!student.summative_score ? 'text-gray-300' : 'text-navy'}`}>
                                                      {student.summative_score || 'N/A'}
                                                  </span>
                                             </div>

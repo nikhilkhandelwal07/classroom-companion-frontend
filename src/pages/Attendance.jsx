@@ -11,8 +11,7 @@ import {
     X,
     ArrowUpDown,
     ArrowUp,
-    ArrowDown,
-    Share2
+    ArrowDown
 } from 'lucide-react';
 import {
     BarChart,
@@ -137,11 +136,6 @@ const Attendance = ({ token, courses, showToast, onLogout }) => {
         }
     };
 
-    const handleShareLink = () => {
-        const url = `${window.location.origin}/student/${selectedCourseId}/${selectedDivision}`;
-        navigator.clipboard.writeText(url);
-        showToast("Student Portal link copied to clipboard!", "success");
-    };
 
     const sortedStudents = useMemo(() => {
         if (!attendanceData) return [];
@@ -218,13 +212,6 @@ const Attendance = ({ token, courses, showToast, onLogout }) => {
                         <span>Email Low Attendance</span>
                     </button>
 
-                    <button
-                        onClick={handleShareLink}
-                        className="flex items-center space-x-2 bg-navy hover:bg-navy/90 text-white px-5 py-2 rounded-lg font-bold shadow-lg shadow-navy/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        <Share2 className="w-4 h-4" />
-                        <span>Share Student Link</span>
-                    </button>
                 </div>
             </div>
 
