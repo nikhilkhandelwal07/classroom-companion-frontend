@@ -235,9 +235,11 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
 
         try {
             const formData = new FormData();
+            const today = new Date().toISOString().split('T')[0];
             selectedFiles.forEach(file => formData.append('files', file));
             formData.append('course_id', selectedCourseId);
             formData.append('division', selectedDivision);
+            formData.append('session_date', today);
 
             const res = await fetch(`${import.meta.env.VITE_API_URL}/upload-material`, {
                 method: 'POST',
@@ -273,7 +275,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
                 body: JSON.stringify({
                     url: urlInput,
                     course_id: selectedCourseId,
-                    division: selectedDivision
+                    division: selectedDivision,
+                    session_date: new Date().toISOString().split('T')[0]
                 })
             });
             if (res.status === 401) return onLogout();
