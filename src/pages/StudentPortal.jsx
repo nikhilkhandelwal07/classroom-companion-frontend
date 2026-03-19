@@ -25,7 +25,9 @@ const StudentPortal = ({ showToast }) => {
     const fetchAnsweredQuestions = async () => {
         setLoadingQuestions(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/student-questions?course_id=${courseId}&division=${divisionId}`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/student-questions?course_id=${courseId}&division=${divisionId}`, {
+                cache: 'no-store'
+            });
             const data = await res.json();
             if (res.ok) {
                 setAnsweredQuestions(data.questions || []);

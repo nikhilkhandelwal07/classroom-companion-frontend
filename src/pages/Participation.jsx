@@ -55,7 +55,8 @@ const Participation = ({ token, courses, showToast, onLogout }) => {
         setLoading(true);
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/participation?course_id=${selectedCourseId}&division=${selectedDivision}&session_date=${sessionDate}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                cache: 'no-store'
             });
             if (res.status === 401) return onLogout();
             if (res.ok) {

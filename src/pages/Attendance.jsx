@@ -73,7 +73,8 @@ const Attendance = ({ token, courses, showToast, onLogout }) => {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/attendance?course_id=${selectedCourseId}&division=${selectedDivision}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cache: 'no-store'
             });
             if (response.status === 401) return onLogout();
             const data = await response.json();

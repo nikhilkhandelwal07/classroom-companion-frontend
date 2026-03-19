@@ -113,7 +113,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
         if (!cid || !div) return;
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/list-materials?course_id=${cid}&division=${div}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                cache: 'no-store'
             });
             if (res.status === 401) return onLogout();
             if (res.ok) {
@@ -131,7 +132,8 @@ const SessionMaterial = ({ token, courses, showToast, onLogout }) => {
         setLoadingHistory(true);
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/session-history?course_id=${cid}&division=${div}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                cache: 'no-store'
             });
             if (res.status === 401) return onLogout();
             if (res.ok) {

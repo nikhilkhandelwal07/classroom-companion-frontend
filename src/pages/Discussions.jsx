@@ -55,7 +55,8 @@ const Discussions = ({ token, courses, showToast, onLogout }) => {
         setError('');
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/questions?course_id=${selectedCourseId}&division=${selectedDivision}&status=${filter}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                cache: 'no-store'
             });
             if (res.status === 401) return onLogout();
             const data = await res.json();
